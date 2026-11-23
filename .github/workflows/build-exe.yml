@@ -1,69 +1,34 @@
-name: Build Windows EXE
-
-# 在 GitHub 云端的 Windows 环境里打包出 .exe，无需你本地安装 Python。
-# 使用前提：把本仓库 fork 到你自己账号下，把本文件放到仓库的
-# .github/workflows/build-exe.yml，推送后在 Actions 页面手动运行。
-
+name: Build WorkBuddy EXE
 on:
-  workflow_dispatch:        # 手动触发
+  workflow_dispatch:
   push:
-    tags:
-      - "v*"               # 打版本标签时自动打包并发布到 Release
-
-permissions:
-  contents: write
+    branches: [ main ]
 
 jobs:
   build:
-    name: Package EXE (Windows)
     runs-on: windows-latest
-    timeout-minutes: 15
-
     steps:
-      - name: Checkout source
+      - name: 拉取源码
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: 安装Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: pip
+          python-version: "3.11"
+          # 重点：不要加 cache: pip ！这个项目没有依赖清单文件
 
-      - name: Install PyInstaller
-        run: python -m pip install --upgrade pyinstaller
-
-      - name: Build WorkBuddy EXE
+      - name: 安装打包工具 PyInstaller
         run: |
-          python -m PyInstaller --noconfirm --clean --onedir --console `
-            --name workbuddy-signin `
-            signin.py
+          python -m pip install --upgrade pip
+          pip install pyinstaller
 
-      - name: Build Qoder CN EXE
+      - name: 打包脚本
         run: |
-          python -m PyInstaller --noconfirm --clean --onedir --console `
-            --name qoder-signin `
-            qoder_signin.py
+          pyinstaller --onefile --console --name workbuddy-signin signin.py
+          pyinstaller --onefile --console --name qoder-signin qoder_signin.py
 
-      - name: Zip artifacts
-        shell: pwsh
-        run: |
-          Compress-Archive -Path "dist/workbuddy-signin/*" -DestinationPath "workbuddy-signin-windows.zip"
-          Compress-Archive -Path "dist/qoder-signin/*"    -DestinationPath "qoder-signin-windows.zip"
-
-      - name: Upload artifacts
+      - name: 上传打包产物
         uses: actions/upload-artifact@v4
         with:
-          name: windows-exe
-          path: |
-            workbuddy-signin-windows.zip
-            qoder-signin-windows.zip
-
-      # 打 v* 标签时，自动把两个 zip 挂到对应 Release 上。
-      - name: Publish to Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            workbuddy-signin-windows.zip
-            qoder-signin-windows.zip
-#（注：内容由AI生成）
+          name: workbuddy-auto-signin-exe
+          path: dist/*.exe
