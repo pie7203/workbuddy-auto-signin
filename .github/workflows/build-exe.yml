@@ -15,7 +15,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          # 重点：不要加 cache: pip ！这个项目没有依赖清单文件
 
       - name: 安装打包工具 PyInstaller
         run: |
@@ -26,9 +25,11 @@ jobs:
         run: |
           pyinstaller --onefile --console --name workbuddy-signin signin.py
           pyinstaller --onefile --console --name qoder-signin qoder_signin.py
+          dir dist # 打印目录，日志里能看到有没有exe生成
 
       - name: 上传打包产物
         uses: actions/upload-artifact@v4
         with:
           name: workbuddy-auto-signin-exe
-          path: dist/*.exe
+          path: dist\*.exe
+          retention-days: 30
